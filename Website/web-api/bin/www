@@ -1,0 +1,308 @@
+#!/usr/bin/env node
+
+/* require('dotenv').config(); */
+
+/**
+ * Module dependencies.
+ */
+
+const debug = require('debug')('api:server');
+const http = require('http');
+const {
+  app, sequelize, models, databaseConfig
+} = require('../app');
+
+const testData = require('../testdata'); // Test data for seeding database
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+const port = normalizePort(process.env.PORT);
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+const server = http.createServer(app);
+
+/**
+ * Sync database.
+ * Listen on provided port, on all network interfaces.
+ */
+
+sequelize.sync(databaseConfig).then(async () => { // TODO: Use sequelize.migration() instead
+  // if (databaseConfig.force) {
+  //   await seedDatabase(testData);
+  // }
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', onListening);
+});
+
+//get data from app
+app.post('/data', (req, res) => {
+  const dataArray = req.body; // Access the array of arrays from the request body
+  console.log('Received data from mobile app:', dataArray);
+
+  // Process the data and send a response back to the mobile app
+  seedDatabase(dataArray)
+    .then(() => res.send('Data received and processed successfully'))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Error processing data');
+    });
+});
+
+// TODO send data to app
+// NOTE using /buoys for authBuoys MUST SEND groupId in REQUEST
+// NOTE using /buoy-owner for buoy owner to extract email MUST SEND buoyId in REQUEST
+// send buoys by groupId to the app
+// app.get('/buoys', async (req, res) => {
+//   try {
+//     const groupId = req.query; // get groupId from query parameters
+
+//     if (!groupId) {
+//       return res.status(400).send('groupId is required');
+//     }
+//     console.log('Received data from mobile app:', groupId);
+
+//     // find buoys from the database that match the provided groupId
+//     const buoysForGroup = await models.Buoy.findAll({
+//       where: { groupId: groupId }
+//     });
+
+//     res.send(buoysForGroup);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send('Error fetching buoys');
+//   }
+// });
+
+// send owner of a buoy by buoyId to app
+// app.get('/buoy-owner', async (req, res) => {
+//   try {
+//     const buoyId = req.query; // get buoyId from query parameters
+
+//     if (!buoyId) {
+//       return res.status(400).send('buoyId is required');
+//     }
+//     console.log('Received data from mobile app:', buoyId);
+
+//     // find buoys from the database based on buoyId
+//     const buoy = await models.Buoy.findOne({
+//       where: { id: buoyId }
+//     });
+
+//     if (!buoy) {
+//       return res.status(404).send('Buoy not found');
+//     }
+//     console.log('Buoy found:', buoyId);
+
+//     // find owner from the database based on the buoy's groupId
+//     const ownerUser = await models.User.findOne({
+//       where: { 
+//         groupId: buoy.groupId, 
+//         role: 'owner' 
+//       }
+//     });
+
+//     if (!ownerUser) {
+//       return res.status(404).send('Owner user not found for this buoy');
+//     }
+//     console.log('Owner found:', ownerUser);
+
+//     res.send(ownerUser);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send('Error fetching owner user');
+//   }
+// });
+
+/**
+ * Seed database.
+ */
+//App data format: Array of arrays in following order: [Group info, Loc info, User info, Buoy info, Data]
+//Group format: name
+//Loc format: name, latitude, longitude
+//User format: username, hashed password, role, groupID
+//Buoy format: name, MAC, groupID, locID
+//Data format: timestamp, surfTemp, surfInsolation, shallowSalinity, shallowTemp, depthTemp, depthTurbidity
+//TODO: remove this comment
+const seedDatabase = async (data) => {
+  const groups = [];
+  const locations = [];
+  const users = [];
+  const buoys = [];
+  const ddata = [];
+  
+  //parse groups
+  for(let i = 0; i < data[0].length; i++){
+    var groupObj = {
+      name: data[0][i]
+    };
+    groups.push(groupObj);
+  }
+
+  //parse locations
+  for(let i = 0; i < data[1].length; i+=3){
+    var locObj = {
+      name: data[1][i],
+      latitude: data[1][i + 1],
+      longitude: data[1][i + 2]
+    };
+    locations.push(locObj);
+  }
+
+  //parse users
+  // TODO: check data is not null
+  for(let i = 0; i < data[2].length; i+=4){
+    var userObj = {
+      username: data[2][i],
+      password: data[2][i + 1],
+      role: data[2][i + 2],
+      groupId: data[2][i + 3]
+    };
+    users.push(userObj);
+  }
+  
+  //parse buoys
+  for (let i = 0; i < data[3].length; i+=4) {
+    var buoyObj = {
+      name: data[3][i],
+      mac: data[3][i + 1],
+      groupId: data[3][i + 2],
+      locationId: data[3][i + 3]
+    };
+    buoys.push(buoyObj);
+  }
+  
+  //parse data
+  for(let i = 0; i < data[4].length; i+=7){
+    var dataObj = {
+      timestamp: data[4][i],
+      surfTemp: data[4][i + 1],
+      surfInsolation: data[4][i + 2],
+      shallowSalinity: data[4][i + 3],
+      shallowTemp: data[4][i + 4],
+      depthTemp: data[4][i + 5],
+      depthTurbidity: data[4][i + 6]
+    };
+    ddata.push(dataObj);
+  }
+  
+  await createGroups(groups);
+  await createLocations(locations);
+  await createUsers(users);
+  await createBuoys(buoys);
+  await createData(ddata);
+};
+
+// TODO: Figure out a proper way to chain these so they execute synchronously
+// Inserting data must happen in the correct order. A model's dependencies must be inserted first.
+
+const createGroups = (groups) => new Promise((resolve) => {
+  models.Group.bulkCreate(groups).then(() => {
+    resolve();
+  })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+
+const createLocations = (locations) => new Promise((resolve) => {
+  models.Location.bulkCreate(locations).then(() => {
+    resolve();
+  })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+
+const createUsers = (users) => new Promise((resolve) => {
+  models.User.bulkCreate(users).then(() => {
+    resolve();
+  })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+
+const createBuoys = (buoys) => new Promise((resolve) => {
+  models.Buoy.bulkCreate(buoys).then(() => {
+    resolve();
+  })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+
+const createData = (data) => new Promise((resolve) => {
+  models.Data.bulkCreate(data).then(() => {
+    resolve();
+  })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  const portNumber = parseInt(val, 10);
+
+  if (isNaN(portNumber)) {
+    // named pipe
+    return val;
+  }
+
+  if (portNumber >= 0) {
+    // port number
+    return portNumber;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string'
+    ? `Pipe ${port}`
+    : `Port ${port}`;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(`${bind} requires elevated privileges`);
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(`${bind} is already in use`);
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  const addr = server.address();
+  const bind = typeof addr === 'string'
+    ? `pipe ${addr}`
+    : `port ${addr.port}`;
+  debug(`Listening on ${bind}`);
+}
