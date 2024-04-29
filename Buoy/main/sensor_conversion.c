@@ -91,5 +91,5 @@ float voltagesConvertLight(uint32_t volt)
 
 float voltagesConvertOxygen(float volt)
 {
-	return volt * 100.0 / 461;
+	return volt * 100.0 /821;
 }

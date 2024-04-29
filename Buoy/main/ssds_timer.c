@@ -12,6 +12,8 @@
 
 #define TIMER "TIMER"
 
+int sleepmode = 0;
+
 /* Defines January 1st, 2015. If the RTC is below this, we can
  * be confident that our timer hasn't been intialized
  */
@@ -37,26 +39,86 @@ void timer_isr(void *arg)
 	}
 }
 
+// void data_collection_worker(void *pvParam)
+// {
+// 	ESP_LOGI(TIMER, "Data collection worker created");
+// 	datapoint_t temp_dp;
+
+// 	//Set up wakeup methods
+// 	//esp_sleep_enable_timer_wakeup(1000000 * 60 * 5);
+// 	//ESP_LOGI(TIMER, "Sleeping for 20 seconds");
+// 	esp_sleep_enable_timer_wakeup(1000000 * 20); //20 seconds sleep
+
+// 	//1 is on, 0 is off
+// 	int BT_STATUS = 1;
+
+// 	gpio_wakeup_enable(18, GPIO_INTR_HIGH_LEVEL);
+// 	esp_sleep_enable_gpio_wakeup();
+
+// 	ESP_LOGI(TIMER, "Wakeup configured");
+// 	while(BT_STATUS == 1)
+// 	{
+// 		/* Resets the watchdog so we don't get timed out */
+// 		esp_task_wdt_reset();
+
+// 		ESP_LOGI(TIMER, "Data collection suspending");
+// 		fflush(stdout);
+// 		vTaskSuspend(NULL);
+
+// 		gpio_set_level(GPIO_OUTPUT_IO_0, 0);
+// 		gather_data(&temp_dp);
+// 		write_dp(&temp_dp);
+
+// 		//ESP_LOGI(TIMER, "Sleeping for 20 seconds");
+// 		//set to sleep for 5 minutes
+
+// 		if(BT_STATUS == 1)
+// 		{
+// 			//ESP_LOGI(TIMER, "IT IS NIGHT TIME!!!!!");
+// 			ssds_ble_deinit();
+// 			ESP_LOGI(TIMER, "Bluetooth deinitialized, sleeping");
+// 			ESP_LOGI(TIMER, "Sleeping for 20 seconds");
+// 			BT_STATUS = 0;
+
+// 			esp_light_sleep_start();
+// 			ESP_LOGI(TIMER, "sleep cause: %d", esp_sleep_get_wakeup_cause());
+// 			if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO) {
+// 				ESP_LOGI(TIMER, "Woke up from button press");
+// 				fflush(stdout);
+// 				ssds_ble_gatt_advertise();
+// 				BT_STATUS = 1;
+// 				pause_thread_timer();
+
+// 			ESP_LOGI(TIMER, "Woke up from sleep");
+// 			}
+// 		}
+
+// 		// if(BT_STATUS && sleepmode == 2)
+// 		// {
+// 		// 	esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+// 		// 	esp_bt_sleep_enable();
+// 		// 	sleep(26);
+// 		// }
+// 	}
+// }
+
 void data_collection_worker(void *pvParam)
 {
 	ESP_LOGI(TIMER, "Data collection worker created");
 	datapoint_t temp_dp;
+	int BT_STATUS = 1;
 
 	//Set up wakeup methods
-	//esp_sleep_enable_timer_wakeup(1000000 * 60 * 5);
-	//ESP_LOGI(TIMER, "Sleeping for 20 seconds");
-	//esp_sleep_enable_timer_wakeup(1000000 * 60 * 5); //20 seconds sleep
-	//1 is on, 0 is off
-	int BT_STATUS = 1;
-	//gpio_wakeup_enable(18, GPIO_INTR_HIGH_LEVEL);
-	//esp_sleep_enable_gpio_wakeup();
+	//esp_sleep_enable_timer_wakeup(1000000 * 10);
+	gpio_wakeup_enable(18, GPIO_INTR_HIGH_LEVEL);
+	esp_sleep_enable_gpio_wakeup();
 	ESP_LOGI(TIMER, "Wakeup configured");
-	while(BT_STATUS == 1)
+	while(1)
 	{
 		/* Resets the watchdog so we don't get timed out */
 		esp_task_wdt_reset();
 
-		ESP_LOGI(TIMER, "Data collection suspending");
+		ESP_LOGI(TIMER, "Data collection is starting");
 		fflush(stdout);
 		vTaskSuspend(NULL);
 
@@ -64,35 +126,31 @@ void data_collection_worker(void *pvParam)
 		gather_data(&temp_dp);
 		write_dp(&temp_dp);
 
-		//ESP_LOGI(TIMER, "Sleeping for 20 seconds");
+		ESP_LOGI(TIMER, "Sleeping for 30 seconds");
 		//set to sleep for 5 minutes
 
-		// if(BT_STATUS)
-		// {
-		// 	//ssds_ble_deinit();
-		// 	ESP_LOGI(TIMER, "Bluetooth deinitialized, sleeping");
-		// 	BT_STATUS = 0;
-		// }
-
-		esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
-  		esp_bt_sleep_enable();
-		sleep(120);
-		//esp_light_sleep_start();
+		if(BT_STATUS)
+		{
+			ssds_ble_deinit();
+			ESP_LOGI(TIMER, "Bluetooth deinitialized, sleeping");
+			BT_STATUS = 0;
+		}
 		
-		// ESP_LOGI(TIMER, "sleep cause: %d", esp_sleep_get_wakeup_cause());
-		// if(esp_sleep_get_wakeup_cause() == 0) {
-		// 	esp_sleep_enable_timer_wakeup(1000000 * 20); //20 seconds sleep
-		// 	ESP_LOGI(TIMER, "Woke up from button press");
-		// 	fflush(stdout);
-		// 	ssds_ble_gatt_advertise();
-		// 	BT_STATUS = 1;
-		// 	pause_thread_timer();
-		// }
+		esp_sleep_enable_timer_wakeup(1000000 * 30); //30 second sleep
+		//esp_sleep_enable_timer_wakeup(1000000 * 60 * 5); //5 mins
+		esp_light_sleep_start();
+		ESP_LOGI(TIMER, "sleep cause: %d", esp_sleep_get_wakeup_cause());
+		if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO) {
+			ESP_LOGI(TIMER, "Woke up from button press");
+			fflush(stdout);
+			ssds_ble_gatt_advertise();
+			BT_STATUS = 1;
+			pause_thread_timer();
+		}
 
 		ESP_LOGI(TIMER, "Woke up from sleep");
 	}
 }
-
 
 void check_if_day()
 {
@@ -113,9 +171,13 @@ void check_if_day()
 
 	if (local_hour >= 7 && local_hour <= 21){
 		ESP_LOGI(TIMER, "Daytime - hour %d", local_hour);
+		// sleepmode = 2;
+		// ESP_LOGI(TIMER, "its DAYTIME!!!!!");
 	}
 	else{
 		ESP_LOGI(TIMER, "Nighttime - hour %d", local_hour);
+		// sleepmode = 1;
+		// ESP_LOGI(TIMER, "its NIGHT TIME!!!!!");
 	}
 }
 

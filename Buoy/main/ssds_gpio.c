@@ -20,7 +20,7 @@
 #define TURBD2_CHANNEL 		ADC_CHANNEL_7
 
 /*Dissolved Oxygen Sensor!!!!*/
-#define OXYGEN_CHANNEL		ADC_CHANNEL_8
+#define OXYGEN_CHANNEL		ADC2_CHANNEL_8
 
 #define GPIO_TAG "GPIOW"
 
@@ -106,7 +106,7 @@ esp_err_t gather_data(datapoint_t* dp)
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_0, SSDS_ADC_WIDTH , DEFAULT_VREF, &chars_0_dB);
 
 	esp_adc_cal_characteristics_t chars_2_5_dB;
-    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_0, SSDS_ADC_WIDTH, DEFAULT_VREF, &chars_2_5_dB);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_6, SSDS_ADC_WIDTH, DEFAULT_VREF, &chars_2_5_dB);
 	
 	
 
@@ -237,7 +237,7 @@ float get_raw_data_temp_convert_to_celsius(esp_adc_cal_characteristics_t chars_6
     uint32_t temp_voltage = 0;
 	float temp_reading = 0;
 	temp_voltage = esp_adc_cal_raw_to_voltage(temp_raw, &chars_6_dB);
-	printf("Temp_voltage: %i\n", temp_voltage);
+	//printf("Temp_voltage: %i\n", temp_voltage);
 	temp_reading = voltagesConvertTemperature(temp_voltage);
 	printf("Temp_reading: %f\n", temp_reading);
 	return temp_reading;
@@ -246,16 +246,17 @@ float get_raw_data_temp_convert_to_celsius(esp_adc_cal_characteristics_t chars_6
 // Oxygen sensor calculations
 float get_raw_data_oxygen(esp_adc_cal_characteristics_t chars_2_5_dB, uint32_t oxygen1_raw)
 {
-	uint32_t o2_voltage = 0;
+	printf("oxygen1_raw: %i\n", oxygen1_raw);
+	//uint32_t o2_voltage = 0;
 	float oxygen_reading = 0;
-	uint32_t oxygen_counter = 0;
-	float data_raw = 0;
-	o2_voltage = esp_adc_cal_raw_to_voltage(oxygen1_raw, &chars_2_5_dB);
+	//uint32_t oxygen_counter = 0;
+	//float data_raw = 0;
+	//o2_voltage = esp_adc_cal_raw_to_voltage(oxygen1_raw, &chars_2_5_dB);
 
-	data_raw = o2_voltage / 4096.0 * 5000.0;
-	oxygen_reading = voltagesConvertOxygen(data_raw);
+	//data_raw = o2_voltage / 4096.0 * 5000.0;
+	oxygen_reading = oxygen1_raw * 100.0 /821;
 	//printf("o2 voltage: %f\n", oxygen_reading);
-	printf("o2 voltage: %f\n", data_raw);
+	//printf("o2 voltage: %f\n", data_raw);
 	printf("Oxygen_reading: %f\n", oxygen_reading);
 	return oxygen_reading;
 	/*
@@ -347,8 +348,9 @@ float get_raw_data_turbidity_convert_to_ntu(esp_adc_cal_characteristics_t chars_
 		//check += ((float)(turbd_raw/1023.0)) * 5.0;
 	//}
 	//check = check / 800;
+	//printf("RANDOM_TURBIDITY_VALUE: %i\n", turbd_raw);
 	check = ((float)(turbd_raw/4095.0)) * 5.0;
-	printf("Voltage: %f\n", check);
+	//printf("Voltage CALVIN: %f\n", check);
 	if(check < 2.5)
 	{
 		return 3000.0;
