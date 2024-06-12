@@ -61,9 +61,13 @@ class _DataDisplayState extends State<DataDisplayScreen> {
   List<Map<String, dynamic>> formattedData = [];
   List<Map<String, dynamic>> formatData(List<BuoyData> data) {
 
+
+
     for (int i = 0; i < data.length; i++) {
+      print(data[i].time.toString());
       var jsonData = {
         "timestamp": data[i].time.toString(),
+
         "surfTemp": data[i].temp1.toDouble(),
         "shallowTemp": data[i].temp2.toDouble(),
         "depthTemp": data[i].temp3.toDouble(),
@@ -73,7 +77,7 @@ class _DataDisplayState extends State<DataDisplayScreen> {
         "shallowTurbidity": data[i].turbidity.toDouble(),
         "depthTurbidity": data[i].turbidity2.toDouble(),
         "oxygen": data[i].oxygen.toDouble(),
-        "locationId": 3,
+        "locationId": 2.0,
       };
 
       formattedData.add(jsonData);
@@ -90,13 +94,13 @@ class _DataDisplayState extends State<DataDisplayScreen> {
     try {
       var response = await http.post(
         // Our API endpoint for sending data on the server
-        Uri.parse("http://172.24.25.205:8080/data"),
+        Uri.parse("http://10.0.0.205:8080/data"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(formattedData), // Convert data to JSON format
       );
-      print(response.body);
+      // print(response.body);
       return response.body;
     } catch(e) {
       print(e);

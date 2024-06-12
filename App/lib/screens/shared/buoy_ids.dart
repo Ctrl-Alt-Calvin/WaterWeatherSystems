@@ -1,6 +1,6 @@
 class BuoyIDs {
-  int buoyID = -1;
-  int locationID = -1;
+  int buoyID = 1;
+  int locationID = 1;
   String authLevel = '';
   String name = '';
   String userEmail = '';

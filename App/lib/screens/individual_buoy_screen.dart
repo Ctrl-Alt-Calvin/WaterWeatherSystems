@@ -4,50 +4,8 @@ import 'package:buoy_flutter/constants.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:google_fonts/google_fonts.dart';
 import './shared/buoy_ids.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-// /// Determine the current position of the device.
-// ///
-// /// When the location services are not enabled or permissions
-// /// are denied the `Future` will return an error.
-// Future<Position> _determinePosition() async {
-//   bool serviceEnabled;
-//   LocationPermission permission;
-//
-//   // Test if location services are enabled.
-//   serviceEnabled = await Geolocator.isLocationServiceEnabled();
-//   if (!serviceEnabled) {
-//     // Location services are not enabled don't continue
-//     // accessing the position and request users of the
-//     // App to enable the location services.
-//     return Future.error('Location services are disabled.');
-//   }
-//
-//   permission = await Geolocator.checkPermission();
-//   if (permission == LocationPermission.denied) {
-//     permission = await Geolocator.requestPermission();
-//     if (permission == LocationPermission.denied) {
-//       // Permissions are denied, next time you could try
-//       // requesting permissions again (this is also where
-//       // Android's shouldShowRequestPermissionRationale
-//       // returned true. According to Android guidelines
-//       // your App should show an explanatory UI now.
-//       return Future.error('Location permissions are denied');
-//     }
-//   }
-//
-//   if (permission == LocationPermission.deniedForever) {
-//     // Permissions are denied forever, handle appropriately.
-//     return Future.error(
-//         'Location permissions are permanently denied, we cannot request permissions.');
-//   }
-//
-//   // When we reach here, permissions are granted and we can
-//   // continue accessing the position of the device.
-//   return await Geolocator.getCurrentPosition();
-// }
 
 class IndividualBuoyScreen extends StatefulWidget {
   BluetoothDevice device;
@@ -57,12 +15,14 @@ class IndividualBuoyScreen extends StatefulWidget {
   State<IndividualBuoyScreen> createState() {
     return _IndividualBuoyState(this.device);
   }
+
 }
 
 class _IndividualBuoyState extends State<IndividualBuoyScreen> {
   BluetoothDevice device;
   _IndividualBuoyState(this.device);
   BuoyIDs buoyIDs = BuoyIDs(); // Get reference to global variables
+
 
   void startRecord() async {
     List<BluetoothService> services = await device
@@ -200,122 +160,32 @@ class _IndividualBuoyState extends State<IndividualBuoyScreen> {
         )
     );
   }
-  // Future<Position> getLocation() async {
-  //   bool serviceEnabled;
-  //   LocationPermission permission;
-  //
-  //   // Test if location services are enabled.
-  //   serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  //   if (!serviceEnabled) {
-  //     // Location services are not enabled don't continue
-  //     // accessing the position and request users of the
-  //     // App to enable the location services.
-  //     return Future.error('Location services are disabled.');
-  //   }
-  //
-  //   permission = await Geolocator.checkPermission();
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //     if (permission == LocationPermission.denied) {
-  //       // Permissions are denied, next time you could try
-  //       // requesting permissions again (this is also where
-  //       // Android's shouldShowRequestPermissionRationale
-  //       // returned true. According to Android guidelines
-  //       // your App should show an explanatory UI now.
-  //       return Future.error('Location permissions are denied');
-  //     }
-  //   }
-  //
-  //   if (permission == LocationPermission.deniedForever) {
-  //     // Permissions are denied forever, handle appropriately.
-  //     return Future.error(
-  //         'Location permissions are permanently denied, we cannot request permissions.');
-  //   }
-  //
-  //   // When we reach here, permissions are granted and we can
-  //   // continue accessing the position of the device.
-  //   Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-  //   return position;
-  // }
+
   // Called in the Change Location button, still needs implementation
-  void handleLocation()  async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  void handleLocation() async {
+    /*
+    *
+    * */
 
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      return Future.error('Location services are disabled.');
-    }
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
-        return Future.error('Location permissions are denied');
-      }
-    }
+    // // Once we get actual data we want to change dummyData to our actual data list
+    // //var formattedData = formatData(data);
 
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    double latitude = position.latitude;
-    double longitude = position.longitude;
-
-  //   {
-  //     "name": "Sebastian's Apartment",
-  //   "latitude": 40.98,
-  //   "longitude": -137.503
-  // }
     //200 -- success, 400, 404, 500
     try {
       var response = await http.post(
         // Our API endpoint for sending data on the server
-        Uri.parse("http://172.24.25.205:8080/location"),
+        Uri.parse("http://10.0.0.205:8080/location"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode({"name": "Sebastian's Apartment","latitude": latitude,"longitude": longitude}), // Convert data to JSON format
+        body: jsonEncode({"name" : "Test3", "latitude" : 1.0, "longitude" : 1.0}), // Convert data to JSON format
       );
-
-
-      print(response.body);
-      // if (response.statusCode == 201) {
-      //   // data = JsonDecoder(response.body[0]); // Get the schema here and make a class.
-      //   int location_id = int.parse(response.body[0]); // json decode?
-      //
-      //   // I need to make a request here to get the buoy ID.
-      //
-      //   int buoy_id = -1;
-      //
-      //
-      //   response = await http.put(
-      //     // Our API endpoint for sending data on the server
-      //     Uri.parse("http://10.0.0.205:8080/buoy/$buoy_id"),
-      //     headers: <String, String>{
-      //       'Content-Type': 'application/json; charset=UTF-8',
-      //     },
-      //     body: jsonEncode({"locationId": location_id}), // Convert data to JSON format
-      //   );
-      // }
-      // return response.body;
+       print(response.body);
+       print(response.body[0][0]); //In theory this is the ID number returned?
+      //return response.body;
     } catch(e) {
       print(e);
-      // return e;
     }
   }
 

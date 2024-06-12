@@ -9,9 +9,6 @@ import 'package:http/http.dart' as http; // For when API endpoint is set up
 import 'dart:convert';
 import './buoys_screen.dart'; // Import buoys_screen.dart which contains our bluetooth functionality
 
-import 'package:geolocator/geolocator.dart';
-
-
 class DashboardScreen extends StatefulWidget {
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -48,12 +45,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // Create a mock HTTP client
     // Once API endpoint is set up, replace final mockClient = MockHttpClient(); with
-    final client = http.Client();
-    // final mockClient = MockHttpClient2();
+    // final client = http.Client();
+    final mockClient = MockHttpClient2();
 
     // Simulate an API call
     // Replace with client.get(Uri.parse('https://your-api-endpoint.com')).then((response)
-    client.get(Uri.parse('http://172.24.25.205:8080/')).then((response) {
+    mockClient.get(Uri.parse('https://your-api-endpoint.com')).then((response) {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         final List<dynamic> ownedBuoys = jsonData['ownedBuoys'];
