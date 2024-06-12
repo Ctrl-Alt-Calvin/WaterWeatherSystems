@@ -4,12 +4,18 @@
 //This function is to make correction to the salinity to get a more accurate reading.
 float salinityCorrection(float salinity)
 {
+	float sl = salinity;
 	/*
 	Leaving this blank because some sensor are calibrated a little differently so 
 	you will need to run some test can compare your buoy result with a salinity device.
 	After that you will need to correct the turbidity to fit better with the device.
 	*/
-	return salinity;
+	if (sl > 18 && sl < 22) {
+		sl = 0;
+		return sl;
+	}
+	
+	return sl;
 }
 
 //This function is to convert conductivity values to salinity values.

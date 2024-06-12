@@ -39,69 +39,6 @@ void timer_isr(void *arg)
 	}
 }
 
-// void data_collection_worker(void *pvParam)
-// {
-// 	ESP_LOGI(TIMER, "Data collection worker created");
-// 	datapoint_t temp_dp;
-
-// 	//Set up wakeup methods
-// 	//esp_sleep_enable_timer_wakeup(1000000 * 60 * 5);
-// 	//ESP_LOGI(TIMER, "Sleeping for 20 seconds");
-// 	esp_sleep_enable_timer_wakeup(1000000 * 20); //20 seconds sleep
-
-// 	//1 is on, 0 is off
-// 	int BT_STATUS = 1;
-
-// 	gpio_wakeup_enable(18, GPIO_INTR_HIGH_LEVEL);
-// 	esp_sleep_enable_gpio_wakeup();
-
-// 	ESP_LOGI(TIMER, "Wakeup configured");
-// 	while(BT_STATUS == 1)
-// 	{
-// 		/* Resets the watchdog so we don't get timed out */
-// 		esp_task_wdt_reset();
-
-// 		ESP_LOGI(TIMER, "Data collection suspending");
-// 		fflush(stdout);
-// 		vTaskSuspend(NULL);
-
-// 		gpio_set_level(GPIO_OUTPUT_IO_0, 0);
-// 		gather_data(&temp_dp);
-// 		write_dp(&temp_dp);
-
-// 		//ESP_LOGI(TIMER, "Sleeping for 20 seconds");
-// 		//set to sleep for 5 minutes
-
-// 		if(BT_STATUS == 1)
-// 		{
-// 			//ESP_LOGI(TIMER, "IT IS NIGHT TIME!!!!!");
-// 			ssds_ble_deinit();
-// 			ESP_LOGI(TIMER, "Bluetooth deinitialized, sleeping");
-// 			ESP_LOGI(TIMER, "Sleeping for 20 seconds");
-// 			BT_STATUS = 0;
-
-// 			esp_light_sleep_start();
-// 			ESP_LOGI(TIMER, "sleep cause: %d", esp_sleep_get_wakeup_cause());
-// 			if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO) {
-// 				ESP_LOGI(TIMER, "Woke up from button press");
-// 				fflush(stdout);
-// 				ssds_ble_gatt_advertise();
-// 				BT_STATUS = 1;
-// 				pause_thread_timer();
-
-// 			ESP_LOGI(TIMER, "Woke up from sleep");
-// 			}
-// 		}
-
-// 		// if(BT_STATUS && sleepmode == 2)
-// 		// {
-// 		// 	esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
-// 		// 	esp_bt_sleep_enable();
-// 		// 	sleep(26);
-// 		// }
-// 	}
-// }
-
 void data_collection_worker(void *pvParam)
 {
 	ESP_LOGI(TIMER, "Data collection worker created");
@@ -109,7 +46,7 @@ void data_collection_worker(void *pvParam)
 	int BT_STATUS = 1;
 
 	//Set up wakeup methods
-	//esp_sleep_enable_timer_wakeup(1000000 * 10);
+	esp_sleep_enable_timer_wakeup(1000000 * 60 * 15); // 15 min sleep timer
 	gpio_wakeup_enable(18, GPIO_INTR_HIGH_LEVEL);
 	esp_sleep_enable_gpio_wakeup();
 	ESP_LOGI(TIMER, "Wakeup configured");
@@ -126,9 +63,6 @@ void data_collection_worker(void *pvParam)
 		gather_data(&temp_dp);
 		write_dp(&temp_dp);
 
-		ESP_LOGI(TIMER, "Sleeping for 30 seconds");
-		//set to sleep for 5 minutes
-
 		if(BT_STATUS)
 		{
 			ssds_ble_deinit();
@@ -136,12 +70,10 @@ void data_collection_worker(void *pvParam)
 			BT_STATUS = 0;
 		}
 		
-		esp_sleep_enable_timer_wakeup(1000000 * 30); //30 second sleep
-		//esp_sleep_enable_timer_wakeup(1000000 * 60 * 5); //5 mins
 		esp_light_sleep_start();
 		ESP_LOGI(TIMER, "sleep cause: %d", esp_sleep_get_wakeup_cause());
 		if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO) {
-			ESP_LOGI(TIMER, "Woke up from button press");
+			ESP_LOGI(TIMER, "Woke up from button/switch press");
 			fflush(stdout);
 			ssds_ble_gatt_advertise();
 			BT_STATUS = 1;

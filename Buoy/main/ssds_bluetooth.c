@@ -274,7 +274,7 @@ static void ble_data_read(esp_gatt_rsp_t *rsp) {
 
             data_offset += send_size;
             if (data_offset >= data_size) {
-                read_type_flag = IV_READY;
+read_type_flag = IV_READY;
                 data_offset = 0;
                 data_size = 0;
             }

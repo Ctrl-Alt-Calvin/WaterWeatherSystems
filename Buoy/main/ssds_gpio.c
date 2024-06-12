@@ -5,7 +5,7 @@
 #define DEFAULT_VREF    1100
 
 //#define NO_OF_SAMPLES   64          			//Multisampling
-#define NO_OF_SAMPLES    13
+#define NO_OF_SAMPLES    12 //Number of times it collects per run
 #define SSDS_ADC_WIDTH	ADC_WIDTH_BIT_12 
 
 #define TEMP1_CHANNEL 		ADC_CHANNEL_0
@@ -106,7 +106,7 @@ esp_err_t gather_data(datapoint_t* dp)
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_0, SSDS_ADC_WIDTH , DEFAULT_VREF, &chars_0_dB);
 
 	esp_adc_cal_characteristics_t chars_2_5_dB;
-    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_6, SSDS_ADC_WIDTH, DEFAULT_VREF, &chars_2_5_dB);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_11, SSDS_ADC_WIDTH, DEFAULT_VREF, &chars_2_5_dB);
 	
 	
 
@@ -240,36 +240,35 @@ float get_raw_data_temp_convert_to_celsius(esp_adc_cal_characteristics_t chars_6
 	//printf("Temp_voltage: %i\n", temp_voltage);
 	temp_reading = voltagesConvertTemperature(temp_voltage);
 	printf("Temp_reading: %f\n", temp_reading);
-	return temp_reading;
+	//return temp_reading;
+	return 20;
 }
+
+
+// Future Ph sensor calculations
+// More information can be found here: https://www.dfrobot.com/product-1782.html
+// float get_raw_data_oxygen(esp_adc_cal_characteristics_t chars_2_5_dB, uint32_t ph_raw, uint32_t temp)
+// {
+// 	float slope;
+// 	float intercept;
+
+// 	float ph_reading = slope*(ph_raw/temp) + intercept;
+
+// 	printf("Pn_reading: %f\n", ph_reading);
+// 	return ph_reading;
+// }
+
 
 // Oxygen sensor calculations
 float get_raw_data_oxygen(esp_adc_cal_characteristics_t chars_2_5_dB, uint32_t oxygen1_raw)
 {
 	printf("oxygen1_raw: %i\n", oxygen1_raw);
-	//uint32_t o2_voltage = 0;
 	float oxygen_reading = 0;
-	//uint32_t oxygen_counter = 0;
-	//float data_raw = 0;
-	//o2_voltage = esp_adc_cal_raw_to_voltage(oxygen1_raw, &chars_2_5_dB);
-
-	//data_raw = o2_voltage / 4096.0 * 5000.0;
-	oxygen_reading = oxygen1_raw * 100.0 /821;
+	oxygen_reading = oxygen1_raw * 100.0 /821; // 821 is the calibration value and will need to be changed.
 	//printf("o2 voltage: %f\n", oxygen_reading);
 	//printf("o2 voltage: %f\n", data_raw);
 	printf("Oxygen_reading: %f\n", oxygen_reading);
 	return oxygen_reading;
-	/*
-	This will throw out the first 10 sensor reading which tend to be inaccurate. 
-	if (oxygen_counter != 10) {
-		oxygen_counter++;
-		return 0;
-	}
-	else {
-		oxygen_counter++;
-		return oxygen_reading;
-	}
-	*/
 }
 
 /*
@@ -306,7 +305,8 @@ float get_raw_data_conductivity_convert_to_salinity(esp_adc_cal_characteristics_
 	When deployed then make sure that the temp sensor is use is closest to the water sensor.
 	*/
 	salin_reading = conductivityConvSalinity(temp_reading, salin_voltage); // Salinity will need more work as we are using an unconventional sensor.
-	return salin_reading;
+	//return salin_reading;
+	return 2;
 }
 
 /*
@@ -338,7 +338,7 @@ Return:
 */
 float get_raw_data_turbidity_convert_to_ntu(esp_adc_cal_characteristics_t chars_6_dB, uint32_t turbd_raw)
 {
-	//uint32_t turbd_voltage = 0;
+	uint32_t turbd_voltage = 0;
 	float turbd_reading = 0;
 	float check = 0;
 	//for(int j =0; j < 800; j++)
@@ -350,7 +350,7 @@ float get_raw_data_turbidity_convert_to_ntu(esp_adc_cal_characteristics_t chars_
 	//check = check / 800;
 	//printf("RANDOM_TURBIDITY_VALUE: %i\n", turbd_raw);
 	check = ((float)(turbd_raw/4095.0)) * 5.0;
-	//printf("Voltage CALVIN: %f\n", check);
+	printf("Voltage turb: %d\n", turbd_raw);
 	if(check < 2.5)
 	{
 		return 3000.0;
@@ -358,7 +358,7 @@ float get_raw_data_turbidity_convert_to_ntu(esp_adc_cal_characteristics_t chars_
 	else
 	{
 		voltagesConvertTurbidity(check);
-		//printf("Turbidity: %f\n", turbd_reading);
+		printf("Turbidity: %f\n", turbd_reading);
 	}
 	return turbd_reading;
 }
