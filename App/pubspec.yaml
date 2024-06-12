@@ -24,6 +24,7 @@ dependencies:
   syncfusion_flutter_gauges: ^22.2.11
   web_socket_client: ^0.1.0-dev.3
   http: ^1.1.0
+  geolocator: ^11.0.0
 
 dev_dependencies:
   flutter_test:
